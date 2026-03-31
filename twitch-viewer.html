@@ -305,10 +305,14 @@ input[type="color"]::-webkit-color-swatch{border:none;border-radius:3px}
     </div>
     <div class="chat-wrap" id="chatWrap">
       <div class="chat-resize" id="chatResize"></div>
-      <iframe id="chatFrame"></iframe>
+      <iframe id="chatFrame" title="Twitch chat"
+        sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals"
+        allow="fullscreen; autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin"></iframe>
       <div class="blocker-notice hidden" id="chatNotice">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
         <p>Chat couldn't load. Your ad blocker may be interfering.</p>
+        <button class="btn btn-primary btn-sm" type="button" id="openChatPopoutBtn">Open chat on Twitch</button>
       </div>
     </div>
   </div>
@@ -378,6 +382,10 @@ input[type="color"]::-webkit-color-swatch{border:none;border-radius:3px}
         <label>Theater Mode (hide chat)</label>
         <div class="toggle" id="theaterToggle"></div>
       </div>
+      <p style="font-size:12px;color:var(--text2);line-height:1.45;margin:8px 0 10px">
+        If chat stays on &quot;Connecting&quot; (common on mobile Safari), open it in Twitch instead:
+      </p>
+      <button class="btn btn-ghost btn-sm" type="button" id="openChatPopoutSettingsBtn" style="width:100%">Open chat on Twitch (new tab)</button>
     </div>
 
     <div class="setting-section">
@@ -390,19 +398,15 @@ input[type="color"]::-webkit-color-swatch{border:none;border-radius:3px}
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-function getParent() {
-  const saved = $('#parentInput')?.value?.trim();
-  if (saved) return saved;
-  const h = location.hostname;
-  if (h && !/^\d+\.\d+\.\d+\.\d+$/.test(h) && h !== '') return h;
-  return 'localhost';
-}
+/** Twitch matches embed parent to the page hostname — current host must be listed first. */
 function getParentParams() {
-  const p = getParent();
-  const parents = new Set([p, 'localhost']);
+  const parents = [];
   const h = location.hostname;
-  if (h && !/^\d+\.\d+\.\d+\.\d+$/.test(h) && h !== '') parents.add(h);
-  return [...parents].map(d => `parent=${d}`).join('&');
+  if (h && !/^\d+\.\d+\.\d+\.\d+$/.test(h) && h !== '') parents.push(h);
+  const manual = $('#parentInput')?.value?.trim();
+  if (manual && !parents.includes(manual)) parents.push(manual);
+  if (!parents.includes('localhost')) parents.push('localhost');
+  return parents.map(d => `parent=${encodeURIComponent(d)}`).join('&');
 }
 const DEFAULTS = {
   position: 'bottom', theme: 'dark', width: 340, height: 45,
@@ -636,6 +640,15 @@ $('#settingsBtn').addEventListener('click', openSettings);
 $('#settingsOverlay').addEventListener('click', closeSettings);
 $('#closeSettings').addEventListener('click', closeSettings);
 $('#openDirectBtn').addEventListener('click', () => { if (currentUrl) window.open(currentUrl, '_blank'); });
+function openChatPopout() {
+  if (currentType === 'channel' && currentChannel) {
+    window.open(`https://www.twitch.tv/popout/${encodeURIComponent(currentChannel)}/chat`, '_blank', 'noopener');
+  } else if (currentUrl) {
+    window.open(currentUrl, '_blank', 'noopener');
+  }
+}
+$('#openChatPopoutBtn')?.addEventListener('click', openChatPopout);
+$('#openChatPopoutSettingsBtn')?.addEventListener('click', openChatPopout);
 
 $('#chatToggleBtn').addEventListener('click', () => {
   settings.theater = !settings.theater;

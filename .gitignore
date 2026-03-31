@@ -3,3 +3,5 @@ macos_memory.img
 *.pdf
 hw9_console_snippets.txt
 encoded_search.py
+# Local Netlify drag-drop copy (same as twitch-viewer.html in repo root)
+twitch-viewer-site/
